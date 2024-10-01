@@ -28,7 +28,9 @@ app.use("/api/toppings", toppingRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/restaurants", restaurantRoutes);
 app.use("/api/customers", customerRoutes);
-
+app.get("/",(req, res) => {
+  res.json({message:"Hello from thr backend"})
+})
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
