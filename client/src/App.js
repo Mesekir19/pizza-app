@@ -18,6 +18,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import { AuthProvider } from "./Auth/AuthContext";
 import ProtectedRoute from "./Protected/ProtectedRoute";
+import OrderHistory from "./components/OrderHistory";
 
 function AppLayout() {
 
@@ -26,8 +27,9 @@ function AppLayout() {
       style={{
         background: "linear-gradient(to bottom right, #ffecd2, #fcb69f)",
       }}
-    > <Navbar />
-
+    >
+      {" "}
+      <Navbar />
       <Routes>
         {/* Route for home page that includes all components */}
         <Route
@@ -45,8 +47,9 @@ function AppLayout() {
 
         {/* Route for the pizza order page */}
         <Route path="/order" element={<PizzaOrderPage />} />
+        <Route path="/orderHistory" element={<OrderHistory />} />
       </Routes>
- <MainFooter />
+      <MainFooter />
     </div>
   );
 }

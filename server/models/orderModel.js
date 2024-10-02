@@ -51,6 +51,41 @@ const getOrdersFromDB = async () => {
   return orders;
 };
 
+const getOrdersByCustomerId = async (customerId) => {
+  // Fetch all orders for a specific customer
+  const orders = await sql`
+    SELECT 
+      o.id, 
+      o.customer_id, 
+      o.restaurant_id, 
+      o.pizza_id, 
+      o.status, 
+      o.order_date, 
+      o.quantity, 
+      c.phone_number AS customer_phone, 
+      p.name AS pizza_name,
+      p.photos[1] AS pizza_photo -- Assuming 'photos' is an array and you want the first photo
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.id
+    JOIN pizzas p ON o.pizza_id = p.id
+    WHERE o.customer_id = ${customerId};  -- Filter by customer ID
+  `;
+
+  // Fetch toppings for each order
+  for (let order of orders) {
+    const toppings = await sql`
+      SELECT t.name
+      FROM order_toppings ot
+      JOIN toppings t ON ot.topping_id = t.id
+      WHERE ot.order_id = ${order.id};
+    `;
+    order.toppings = toppings; // Attach toppings to the order object
+  }
+
+  return orders;
+};
+
+
 // Update order status
 const updateOrderStatusInDB = async (orderId, status) => {
   const [order] = await sql`
@@ -62,4 +97,9 @@ const updateOrderStatusInDB = async (orderId, status) => {
   return order;
 };
 
-module.exports = { createOrderInDB, updateOrderStatusInDB, getOrdersFromDB };
+module.exports = {
+  createOrderInDB,
+  updateOrderStatusInDB,
+  getOrdersFromDB,
+  getOrdersByCustomerId,
+};

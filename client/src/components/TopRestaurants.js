@@ -20,7 +20,7 @@ const TopRestaurants = () => {
      fetchPizzas();
    }, []);
   return (
-    <Box sx={{ padding: 10 }}>
+    <Box sx={{ padding: 3 }}>
       <Typography variant="h3" sx={{ color: "gray" }} gutterBottom>
         Top Restaurants
       </Typography>

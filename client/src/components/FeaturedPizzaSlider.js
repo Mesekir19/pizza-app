@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Typography, Button } from "@mui/material";
 
 const slides = [
@@ -12,31 +12,51 @@ const slides = [
     title: "Try Our New Specialty Pizza",
     description:
       "Discover our latest creation with premium toppings and a perfect blend of flavors. Limited time offer!",
-    image: "/api/placeholder/600/600",
+    image: "/fullpizza.png",
   },
   {
     title: "Family Deal: 2 Large Pizzas",
     description:
       "Perfect for game night! Get two large pizzas with up to 3 toppings each, plus a 2-liter soda.",
-    image: "/api/placeholder/600/600",
+    image: "/fullpizza.png",
   },
 ];
 
 const FeaturedPizzaSlider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isSliding, setIsSliding] = useState(false); // For animation control
+  const [direction, setDirection] = useState("right"); // For slide direction
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
+    setDirection("left"); // Set direction for next slide
+    setIsSliding(true);
+    setTimeout(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setIsSliding(false);
+    }, 300); // Duration of the sliding-out animation
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    setDirection("right"); // Set direction for previous slide
+    setIsSliding(true);
+    setTimeout(() => {
+      setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+      setIsSliding(false);
+    }, 300); // Duration of the sliding-out animation
   };
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      nextSlide();
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(intervalId); // Cleanup interval on component unmount
+  }, []);
+
   return (
-    <Box sx={{ padding: 2, backgroundColor: "#fff5e6" }}>
-      <Typography variant="h4" sx={{ color: "#666", marginBottom: 2 }}>
-        Featured pizza
+    <Box sx={{ padding: 3, backgroundColor: "#fff5e6" }}>
+      <Typography variant="h3" sx={{ color: "#666", marginBottom: 2 }}>
+        Featured Pizza
       </Typography>
       <Box
         sx={{
@@ -47,7 +67,21 @@ const FeaturedPizzaSlider = () => {
           position: "relative",
         }}
       >
-        <Box sx={{ flex: 1, padding: 4, color: "white", zIndex: 1, maxWidth:"700px" }}>
+        <Box
+          sx={{
+            flex: 1,
+            padding: 4,
+            color: "white",
+            zIndex: 1,
+            maxWidth: "700px",
+            transition: "transform 0.3s ease-in-out", // Add transition for smooth sliding
+            transform: isSliding
+              ? direction === "left"
+                ? "translateX(-100%)"
+                : "translateX(100%)"
+              : "translateX(0)",
+          }}
+        >
           <Typography variant="h4" sx={{ fontWeight: "bold", marginBottom: 2 }}>
             {slides[currentSlide].title.split(" ").map((word, index) =>
               word === "Off" || word === "50%" ? (
@@ -86,6 +120,12 @@ const FeaturedPizzaSlider = () => {
             bottom: -50,
             width: "60%",
             overflow: "hidden",
+            transition: "transform 0.3s ease-in-out", // Add transition for smooth sliding
+            transform: isSliding
+              ? direction === "left"
+                ? "translateX(100%)"
+                : "translateX(-100%)"
+              : "translateX(0)",
           }}
         >
           <img

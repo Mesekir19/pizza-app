@@ -12,21 +12,60 @@ import {
   FormControlLabel,
   Link,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import { UploadFile } from "@mui/icons-material";
 import { createRestaurant } from "../../api/restaurants";
+import { z } from "zod"; // Import Zod for validation
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form"; // Import react-hook-form
+
+// Define Zod validation schema
+const restaurantSchema = z.object({
+  name: z.string().min(1, "Admin name is required"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z
+    .string()
+    .min(6, "Confirm password is required")
+    .refine((val, ctx) => {
+      if (val !== ctx.parent.password) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Passwords must match",
+        });
+      }
+      return true;
+    }),
+  location: z.string().min(1, "Location is required"),
+  phoneNumber: z
+    .string()
+    .regex(/^\d+$/, "Phone number must be numeric")
+    .min(1, "Phone number is required"),
+  restaurantName: z.string().min(1, "Restaurant name is required"),
+});
 
 export default function Register() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(restaurantSchema),
+  });
+
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [restaurantName, setRestaurantName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [location, setLocation] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState(0);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [photo, setPhoto] = useState(null); // State for handling the selected photo
   const [photoURL, setPhotoURL] = useState(""); // State for storing uploaded image URL
+  const [loading, setLoading] = useState(false); // State for loading
+  const [error, setError] = useState(""); // State for error message
   const navigate = useNavigate();
 
   // Function to upload the image to Cloudinary
@@ -48,14 +87,11 @@ export default function Register() {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      console.error("Passwords do not match");
-      return;
-    }
-
+  const handleRegister = async (data) => {
+    setLoading(true); // Set loading to true
+    setError(""); // Reset error message
     let imageUrl = "";
+
     if (photo) {
       try {
         // Upload photo to Cloudinary
@@ -63,20 +99,23 @@ export default function Register() {
         setPhotoURL(imageUrl); // Store the uploaded image URL
       } catch (error) {
         console.error("Failed to upload image", error);
+        setLoading(false); // Reset loading state
+        setError("Failed to upload image"); // Set error message
         return;
       }
     }
 
     // Construct restaurant data
     const restaurantData = {
-      name: restaurantName,
+      name,
       address: location,
       photo: imageUrl, // Store Cloudinary URL
       adminName: name,
-      email: email,
-      password: password,
-      phoneNumber: phoneNumber,
-      location: location,
+      email,
+      password,
+      phoneNumber,
+      location,
+      restaurantName,
     };
 
     try {
@@ -86,6 +125,9 @@ export default function Register() {
       navigate("/login"); // Navigate to login after registration
     } catch (error) {
       console.error("Error creating restaurant:", error);
+      setError("Error creating restaurant"); // Set error message
+    } finally {
+      setLoading(false); // Set loading to false
     }
   };
 
@@ -175,7 +217,12 @@ export default function Register() {
             Register
           </Typography>
           <Divider sx={{ borderColor: "lightgray", width: "100%", mb: 2 }} />
-          <Box component="form" noValidate sx={{ mt: 1, width: "100%" }}>
+          <Box
+            component="form"
+            noValidate
+            onSubmit={handleSubmit(handleRegister)}
+            sx={{ mt: 1, width: "100%" }}
+          >
             <TextField
               margin="normal"
               required
@@ -185,8 +232,9 @@ export default function Register() {
               label="Admin Name"
               name="name"
               autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              {...register("name")}
+              error={!!errors.name} // Display error if validation fails
+              helperText={errors.name ? errors.name.message : ""}
               sx={inputStyle}
             />
             <TextField
@@ -198,9 +246,9 @@ export default function Register() {
               label="Email"
               name="email"
               autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")}
+              error={!!errors.email}
+              helperText={errors.email ? errors.email.message : ""}
               sx={inputStyle}
             />
             <TextField
@@ -213,8 +261,9 @@ export default function Register() {
               type="password"
               id="password"
               autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register("password")}
+              error={!!errors.password}
+              helperText={errors.password ? errors.password.message : ""}
               sx={inputStyle}
             />
             <TextField
@@ -227,8 +276,11 @@ export default function Register() {
               type="password"
               id="confirmPassword"
               autoComplete="confirm-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              {...register("confirmPassword")}
+              error={!!errors.confirmPassword}
+              helperText={
+                errors.confirmPassword ? errors.confirmPassword.message : ""
+              }
               sx={inputStyle}
             />
             <TextField
@@ -239,8 +291,9 @@ export default function Register() {
               name="location"
               label="Location"
               id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              {...register("location")}
+              error={!!errors.location}
+              helperText={errors.location ? errors.location.message : ""}
               sx={inputStyle}
             />
             <TextField
@@ -251,8 +304,9 @@ export default function Register() {
               name="phoneNumber"
               label="Phone Number"
               id="phoneNumber"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(parseInt(e.target.value, 10))}
+              {...register("phoneNumber")}
+              error={!!errors.phoneNumber}
+              helperText={errors.phoneNumber ? errors.phoneNumber.message : ""}
               sx={inputStyle}
             />
             <TextField
@@ -264,8 +318,11 @@ export default function Register() {
               label="Restaurant Name"
               name="restaurantName"
               autoComplete="restaurantName"
-              value={restaurantName}
-              onChange={(e) => setRestaurantName(e.target.value)}
+              {...register("restaurantName")}
+              error={!!errors.restaurantName}
+              helperText={
+                errors.restaurantName ? errors.restaurantName.message : ""
+              }
               sx={inputStyle}
             />
             {/* Photo Upload */}
@@ -298,11 +355,10 @@ export default function Register() {
               label="I Accept the Terms and Conditions"
             />
             <Button
-              type="button"
+              type="submit" // Change to submit type for form submission
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2, bgcolor: "orange" }}
-              onClick={handleSubmit}
             >
               Register
             </Button>
@@ -320,6 +376,11 @@ export default function Register() {
               </Grid>
             </Grid>
           </Box>
+          {error && (
+            <Typography variant="body2" color="error">
+              {error}
+            </Typography>
+          )}
         </Box>
       </Grid>
     </Grid>

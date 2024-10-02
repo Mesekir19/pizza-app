@@ -98,10 +98,10 @@ export default function PizzaOrderPage() {
       // Send the order data to the backend
       await createOrder(orderData);
 
-      alert("Order placed successfully!");
+      // alert("Order placed successfully!");
     } catch (error) {
       console.error("Error placing order:", error);
-      alert("Failed to place order.");
+      // alert("Failed to place order.");
     } finally {
       setLoading(false);
     }

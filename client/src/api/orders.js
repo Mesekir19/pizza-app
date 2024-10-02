@@ -17,3 +17,8 @@ export const getOrders = async () => {
   const response = await api.get("/orders");
   return response.data;
 };
+
+export const getOrdersByCustomerId = async (userId) => {
+  const response = await api.get(`/orders/${userId}`);
+  return response.data;
+};

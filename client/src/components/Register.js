@@ -9,35 +9,51 @@ import {
   TextField,
   Button,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import { createCustomer } from "../api/customer";
+import { z } from "zod"; // Import Zod for validation
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form"; // Import react-hook-form
+
+// Define Zod validation schema
+const customerSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  location: z.string().min(1, "Location is required"),
+  phoneNumber: z
+    .string()
+    .regex(/^\d+$/, "Phone number must be numeric")
+    .min(1, "Phone number is required"),
+});
 
 export default function Register() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [location, setLocation] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(customerSchema),
+  });
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(false); // State to track loading status
+  const [message, setMessage] = useState(""); // State to hold success/error message
+
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const customerData = {
-      email,
-      password,
-      location,
-      phoneNumber,
-    };
-
+  const onSubmit = async (data) => {
+    setLoading(true); // Start loading
+    setMessage(""); // Clear previous messages
     try {
       // Create the customer via API
-      await createCustomer(customerData);
-      alert("Customer created successfully!");
+      await createCustomer(data);
+      setMessage("Customer created successfully!"); // Set success message
       navigate("/login"); // Navigate to login after registration
     } catch (error) {
       console.error("Error creating customer:", error);
-      alert("Error creating customer");
+      setMessage("Error creating customer"); // Set error message
+    } finally {
+      setLoading(false); // End loading
     }
   };
 
@@ -127,19 +143,21 @@ export default function Register() {
             Customer Registration
           </Typography>
           <Divider sx={{ borderColor: "lightgray", width: "100%", mb: 2 }} />
-          <Box component="form" noValidate sx={{ mt: 1, width: "100%" }}>
+          <Box
+            component="form"
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+            sx={{ mt: 1, width: "100%" }}
+          >
             <TextField
               margin="normal"
               required
               fullWidth
               variant="outlined"
-              id="email"
               label="Email"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              {...register("email")} // Register the input with react-hook-form
+              error={!!errors.email} // Display error if validation fails
+              helperText={errors.email ? errors.email.message : ""} // Display error message
               sx={inputStyle}
             />
             <TextField
@@ -147,13 +165,11 @@ export default function Register() {
               required
               fullWidth
               variant="outlined"
-              name="password"
               label="Password"
               type="password"
-              id="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register("password")} // Register the input with react-hook-form
+              error={!!errors.password} // Display error if validation fails
+              helperText={errors.password ? errors.password.message : ""} // Display error message
               sx={inputStyle}
             />
             <TextField
@@ -161,11 +177,10 @@ export default function Register() {
               required
               fullWidth
               variant="outlined"
-              name="location"
               label="Location"
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              {...register("location")} // Register the input with react-hook-form
+              error={!!errors.location} // Display error if validation fails
+              helperText={errors.location ? errors.location.message : ""} // Display error message
               sx={inputStyle}
             />
             <TextField
@@ -173,22 +188,31 @@ export default function Register() {
               required
               fullWidth
               variant="outlined"
-              name="phoneNumber"
               label="Phone Number"
-              id="phoneNumber"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              {...register("phoneNumber")} // Register the input with react-hook-form
+              error={!!errors.phoneNumber} // Display error if validation fails
+              helperText={errors.phoneNumber ? errors.phoneNumber.message : ""} // Display error message
               sx={inputStyle}
             />
             <Button
-              type="button"
+              type="submit" // Change to submit type for form submission
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2, bgcolor: "orange" }}
-              onClick={handleSubmit}
+              disabled={loading} // Disable button when loading
             >
-              Register
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Register"
+              )}
             </Button>
+            {/* Message Display */}
+            {message && (
+              <Typography variant="body2" color={loading ? "orange" : "green"}>
+                {message}
+              </Typography>
+            )}
           </Box>
         </Box>
       </Grid>

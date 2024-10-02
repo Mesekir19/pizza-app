@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -12,40 +11,45 @@ import {
   FormControlLabel,
   Link,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import { AuthContext } from "../Auth/AuthContext";
-import { useContext } from "react";
+import { z } from "zod"; // Import Zod for validation
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form"; // Import react-hook-form
+
+// Define Zod validation schema
+const loginSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
-    const { login } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const navigate = useNavigate(); // Using useNavigate instead of useRouter
+  const [loading, setLoading] = useState(false); // State for loading
+  const [message, setMessage] = useState(""); // State for message
 
-  // const handleLogin = async () => {
-  //   try {
-  //     const response = await axios.post(
-  //       "http://localhost:5000/api/users/login",
-  //       { username, password }
-  //     );
-  //     localStorage.setItem("token", response.data.token);
-  //     navigate("/"); // Navigate to home after login
-  //   } catch (error) {
-  //     console.error("Failed to login", error);
-  //   }
-  // };
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  // Handle form submission
+  const onSubmit = async (data) => {
+    setLoading(true); // Set loading to true
+    setMessage(""); // Reset message
     try {
-      // await loginUser({ email, password });
-      await login({ email, password });
-
-      navigate("/"); // Redirect to dashboard after successful login
+      await login(data); // Attempt to login
+      navigate("/"); // Redirect to home after successful login
     } catch (error) {
-      setError("Invalid email or password");
+      setMessage("Invalid email or password"); // Set error message
+    } finally {
+      setLoading(false); // Set loading to false
     }
   };
 
@@ -113,7 +117,12 @@ export default function Login() {
               Login
             </Typography>
             <Divider sx={{ borderColor: "lightgray", width: "100%", mb: 2 }} />
-            <Box component="form" noValidate sx={{ mt: 1, width: "100%" }}>
+            <Box
+              component="form"
+              noValidate
+              onSubmit={handleSubmit(onSubmit)}
+              sx={{ mt: 1, width: "100%" }}
+            >
               <TextField
                 margin="normal"
                 required
@@ -124,8 +133,9 @@ export default function Login() {
                 name="email"
                 autoComplete="email"
                 autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register("email")} // Register the input with react-hook-form
+                error={!!errors.email} // Display error if validation fails
+                helperText={errors.email ? errors.email.message : ""} // Display error message
                 sx={{
                   "& .MuiInputLabel-root": {
                     color: "orange", // Default label color
@@ -155,8 +165,9 @@ export default function Login() {
                 type="password"
                 id="password"
                 autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register("password")} // Register the input with react-hook-form
+                error={!!errors.password} // Display error if validation fails
+                helperText={errors.password ? errors.password.message : ""} // Display error message
                 sx={{
                   "& .MuiInputLabel-root": {
                     color: "orange", // Default label color
@@ -167,7 +178,7 @@ export default function Login() {
                   "& .MuiOutlinedInput-root": {
                     "& fieldset": {
                       borderColor: "orange", // Default border color
-                    },  
+                    },
                     "&:hover fieldset": {
                       borderColor: "orange", // Border color on hover
                     },
@@ -182,14 +193,24 @@ export default function Login() {
                 label="Remember me"
               />
               <Button
-                type="button"
+                type="submit" // Change to submit type for form submission
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2, bgcolor: "orange" }}
-                onClick={handleLogin}
+                disabled={loading} // Disable button when loading
               >
-                Login
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Login"
+                )}
               </Button>
+              {/* Message Display */}
+              {message && (
+                <Typography variant="body2" color="error">
+                  {message}
+                </Typography>
+              )}
               <Grid container>
                 <Grid item xs>
                   <Link

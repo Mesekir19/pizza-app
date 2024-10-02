@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 import {
   Box,
   Card,
@@ -10,22 +11,28 @@ import {
 import { getPizzas } from "../api/pizzas";
 
 const HorizontalScrollPizzas = () => {
-   const [pizzas, setPizzas] = useState([]);
+  const [pizzas, setPizzas] = useState([]);
+  const navigate = useNavigate(); // Initialize navigate for redirection
 
-   // Fetch pizzas from the backend API
-   useEffect(() => {
-     const fetchPizzas = async () => {
-       try {
-         const response = await getPizzas(); // Adjust the endpoint as needed
-         setPizzas(response); // Store the fetched pizzas in state
-         console.log(response);
-       } catch (error) {
-         console.error("Error fetching pizzas:", error);
-       }
-     };
+  // Fetch pizzas from the backend API
+  useEffect(() => {
+    const fetchPizzas = async () => {
+      try {
+        const response = await getPizzas(); // Adjust the endpoint as needed
+        setPizzas(response); // Store the fetched pizzas in state
+        console.log(response);
+      } catch (error) {
+        console.error("Error fetching pizzas:", error);
+      }
+    };
 
-     fetchPizzas();
-   }, []);
+    fetchPizzas();
+  }, []);
+
+  // Handle Order Button Click
+  const handleOrderClick = (pizza) => {
+    navigate("/order", { state: { pizza } }); // Navigate to the order page with pizza data
+  };
 
   return (
     <Box sx={{ padding: 3 }}>
@@ -80,7 +87,7 @@ const HorizontalScrollPizzas = () => {
                 {pizza.name}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                {pizza.toppings?.join(", ")}{" "} 
+                {pizza.toppings?.join(", ")}
               </Typography>
               <Box
                 display="flex"
@@ -90,11 +97,16 @@ const HorizontalScrollPizzas = () => {
                 <Typography variant="h4" color="green">
                   {pizza.price} Birr
                 </Typography>
-                <Button variant="contained" color="warning">
+                <Button
+                  variant="contained"
+                  color="warning"
+                  onClick={() => handleOrderClick(pizza)} // Navigate on button click
+                >
                   Order
                 </Button>
               </Box>
             </CardContent>
+
             {/* Restaurant Info */}
             <Box sx={{ display: "flex", alignItems: "center", marginTop: 2 }}>
               <Avatar

@@ -2,6 +2,7 @@ const {
   createOrderInDB,
   updateOrderStatusInDB,
   getOrdersFromDB,
+  getOrdersByCustomerId,
 } = require("../models/orderModel");
 
 // Create an order (for customers)
@@ -32,6 +33,25 @@ const getOrder= async (req, res) => {
     res.status(500).json({ message: "Failed to fetch orders" });
   }
 };
+
+const getOrdersByCustomer = async (req, res) => {
+  const { customerId } = req.params; // Get customerId from request parameters
+
+  try {
+    const orders = await getOrdersByCustomerId(customerId); // Call the model function
+    if (orders.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No orders found for this customer." });
+    }
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("Error fetching orders by customer:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch orders for this customer." });
+  }
+};
 // Update order status (for restaurant managers)
 const updateOrderStatus = async (req, res) => {
   const { id } = req.params;
@@ -46,4 +66,9 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, updateOrderStatus, getOrder };
+module.exports = {
+  createOrder,
+  updateOrderStatus,
+  getOrder,
+  getOrdersByCustomer,
+};
